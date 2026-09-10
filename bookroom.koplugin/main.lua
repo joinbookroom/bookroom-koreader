@@ -1,3 +1,4 @@
+local DataStorage = require("datastorage")
 local InfoMessage = require("ui/widget/infomessage")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
@@ -11,7 +12,38 @@ local BookRoom = WidgetContainer:extend{
     is_doc_only = true,
 }
 
+function BookRoom:resolvePluginRoot()
+    if type(self.path) ~= "string" or self.path == "" then return nil end
+    if self.path:sub(1, 1) == "/" then return self.path end
+
+    if type(DataStorage) == "table" and type(DataStorage.getFullDataDir) == "function" then
+        local ok, data_dir = pcall(DataStorage.getFullDataDir, DataStorage)
+        if ok and type(data_dir) == "string" and data_dir:sub(1, 1) == "/" then
+            return data_dir:gsub("/$", "") .. "/" .. self.path:gsub("^%./", "")
+        end
+    end
+
+    return self.path
+end
+
+function BookRoom:getModulePath(filename)
+    local root = self.module_root or self:resolvePluginRoot()
+    if type(root) ~= "string" or root == "" then return nil end
+    return root:gsub("/$", "") .. "/" .. filename
+end
+
 function BookRoom:init()
+    -- PluginLoader provides a relative self.path. Resolve it while KOReader's
+    -- data directory is known so delayed menu actions never depend on cwd.
+    self.module_root = self:resolvePluginRoot()
+    self.observation_task = function()
+        self.observation_scheduled = false
+        self:observeChapterChange()
+    end
+    self.reconnect_task = function()
+        self.reconnect_scheduled = false
+        self:flushPendingObservations()
+    end
     self.ui.menu:registerToMainMenu(self)
 end
 
@@ -23,7 +55,7 @@ function BookRoom:loadChapterModule()
         return nil, self.chapter_module_error
     end
 
-    local module_path = self.path and (self.path .. "/chapter.lua")
+    local module_path = self:getModulePath("chapter.lua")
     if not module_path then
         self.chapter_module_error = "plugin path unavailable"
         return nil, self.chapter_module_error
@@ -48,7 +80,7 @@ function BookRoom:loadTocModule()
         return nil, self.toc_module_error
     end
 
-    local module_path = self.path and (self.path .. "/toc.lua")
+    local module_path = self:getModulePath("toc.lua")
     if not module_path then
         self.toc_module_error = "plugin path unavailable"
         return nil, self.toc_module_error
@@ -75,7 +107,7 @@ function BookRoom:loadCredentialsModule()
         return nil, self.credentials_module_error
     end
 
-    local module_path = self.path and (self.path .. "/kosync_credentials.lua")
+    local module_path = self:getModulePath("kosync_credentials.lua")
     if not module_path then
         self.credentials_module_error = "plugin path unavailable"
         return nil, self.credentials_module_error
@@ -96,12 +128,26 @@ end
 
 function BookRoom:loadDocumentModule()
     if self.document_module then return self.document_module end
-    local module_path = self.path and (self.path .. "/kosync_document.lua")
-    local ok, module_or_error = module_path and pcall(dofile, module_path)
+    if self.document_module_error then return nil, self.document_module_error end
+
+    -- Keep device-side module names within FAT's native 8.3 form. The former
+    -- kosync_document.lua repeatedly became an orphaned FSCK file on the Kobo.
+    local module_path = self:getModulePath("docstate.lua")
+    if not module_path then
+        self.document_module_error = "document_module_path_unavailable"
+        return nil, self.document_module_error
+    end
+
+    local ok, module_or_error = pcall(dofile, module_path)
     if not ok or type(module_or_error) ~= "table"
         or type(module_or_error.capture) ~= "function" then
-        logger.warn("BookRoom: unable to load KOSync document reader")
-        return nil
+        self.document_module_error = ok and "document_module_invalid"
+            or "document_module_load_failed"
+        logger.warn(
+            "BookRoom: unable to load KOSync document reader:",
+            ok and self.document_module_error or tostring(module_or_error)
+        )
+        return nil, self.document_module_error
     end
     self.document_module = module_or_error
     return self.document_module
@@ -109,15 +155,66 @@ end
 
 function BookRoom:loadClientModule()
     if self.client_module then return self.client_module end
-    local module_path = self.path and (self.path .. "/client.lua")
-    local ok, module_or_error = module_path and pcall(dofile, module_path)
+    if self.client_module_error then return nil, self.client_module_error end
+
+    local module_path = self:getModulePath("client.lua")
+    if not module_path then
+        self.client_module_error = "client_module_path_unavailable"
+        return nil, self.client_module_error
+    end
+
+    local ok, module_or_error = pcall(dofile, module_path)
     if not ok or type(module_or_error) ~= "table"
         or type(module_or_error.send) ~= "function" then
-        logger.warn("BookRoom: unable to load Book Room HTTP client")
-        return nil
+        self.client_module_error = ok and "client_module_invalid"
+            or "client_module_load_failed"
+        logger.warn(
+            "BookRoom: unable to load Book Room HTTP client:",
+            ok and self.client_module_error or tostring(module_or_error)
+        )
+        return nil, self.client_module_error
     end
     self.client_module = module_or_error
     return self.client_module
+end
+
+function BookRoom:loadObserverModule()
+    if self.observer_module then return self.observer_module end
+    if self.observer_module_error then return nil, self.observer_module_error end
+
+    local module_path = self:getModulePath("observer.lua")
+    if not module_path then
+        self.observer_module_error = "observer_module_path_unavailable"
+        return nil, self.observer_module_error
+    end
+
+    local ok, module_or_error = pcall(dofile, module_path)
+    if not ok or type(module_or_error) ~= "table"
+        or type(module_or_error.new) ~= "function"
+        or type(module_or_error.chapterKey) ~= "function" then
+        self.observer_module_error = ok and "observer_module_invalid"
+            or "observer_module_load_failed"
+        logger.warn(
+            "BookRoom: unable to load chapter observer:",
+            ok and self.observer_module_error or tostring(module_or_error)
+        )
+        return nil, self.observer_module_error
+    end
+    self.observer_module = module_or_error
+    return self.observer_module
+end
+
+function BookRoom:getObserver()
+    if self.observer then return self.observer end
+    local module = self:loadObserverModule()
+    if not module then return nil end
+    local ok, observer = pcall(module.new)
+    if not ok or type(observer) ~= "table" then
+        logger.warn("BookRoom: unable to initialize chapter observer")
+        return nil
+    end
+    self.observer = observer
+    return self.observer
 end
 
 function BookRoom:getChapterSnapshot()
@@ -266,6 +363,189 @@ function BookRoom:showMessage(text)
     if not show_ok then logger.warn("BookRoom: unable to show status") end
 end
 
+function BookRoom:captureObservation(settings, report)
+    report = report or self:getTocReport()
+    if type(report) ~= "table" or report.status ~= "ok"
+        or type(report.currentEntry) ~= "table" then
+        return nil, "chapter_unavailable"
+    end
+
+    local document_module = self:loadDocumentModule()
+    if not document_module then return nil, "document_module_unavailable" end
+    local document = document_module.capture(self.ui, settings)
+    if type(document) ~= "table" or document.status ~= "ok" then
+        return nil, type(document) == "table"
+            and document.reason or "document_unavailable"
+    end
+
+    local entry = report.currentEntry
+    return {
+        document = document,
+        entry = entry,
+        payload = {
+            version = 1,
+            document = document.document,
+            device = document.device,
+            deviceId = document.deviceId,
+            progress = document.progress,
+            percentage = document.percentage,
+            chapter = {
+                title = entry.title,
+                tocIndex = entry.index,
+                depth = entry.depth,
+                parentIndex = entry.parentIndex,
+                sequenceInLevel = entry.sequenceInLevel,
+                path = entry.path,
+                page = entry.page,
+                location = entry.location,
+            },
+        },
+    }
+end
+
+function BookRoom:isOnline()
+    if type(NetworkMgr) ~= "table" or type(NetworkMgr.isOnline) ~= "function" then
+        return false
+    end
+    local ok, online = pcall(NetworkMgr.isOnline, NetworkMgr)
+    return ok and online == true
+end
+
+function BookRoom:sendAutomaticPayload(settings, payload, callback)
+    local client = self:loadClientModule()
+    if not client then
+        if type(callback) == "function" then
+            pcall(callback, { ok = false, reason = "plugin_error" })
+        end
+        return { started = false, reason = "plugin_error", callbackInvoked = true }
+    end
+
+    local send_ok, operation = pcall(
+        client.send,
+        payload,
+        settings.username,
+        settings.userkey,
+        function(send_result)
+            if type(send_result) == "table" and send_result.ok then
+                logger.info(
+                    "BookRoom: automatic chapter observation sent; document:",
+                    payload.document,
+                    "chapter:",
+                    payload.chapter.title
+                )
+            else
+                logger.warn(
+                    "BookRoom: automatic chapter observation retained; document:",
+                    payload.document,
+                    "chapter:",
+                    payload.chapter.title
+                )
+            end
+            if type(callback) == "function" then pcall(callback, send_result) end
+        end
+    )
+    if send_ok and type(operation) == "table" then return operation end
+    if type(callback) == "function" then
+        pcall(callback, { ok = false, reason = "network_failure" })
+    end
+    return { started = false, reason = "network_failure", callbackInvoked = true }
+end
+
+function BookRoom:observeChapterChange()
+    local ok, err = pcall(function()
+        local observer = self:getObserver()
+        local credentials = self:loadCredentialsModule()
+        if not observer or not credentials
+            or type(credentials.withConnection) ~= "function" then
+            return
+        end
+
+        credentials.withConnection(function(settings)
+            local observation = self:captureObservation(settings)
+            if not observation then return end
+            observer:observe(
+                settings.username,
+                observation.document.document,
+                observation.entry,
+                observation.payload,
+                function() return self:isOnline() end,
+                function(payload, callback)
+                    return self:sendAutomaticPayload(settings, payload, callback)
+                end
+            )
+        end)
+    end)
+    if not ok then
+        logger.warn("BookRoom: automatic chapter observation failed safely:", tostring(err))
+    end
+end
+
+function BookRoom:flushPendingObservations()
+    local ok, err = pcall(function()
+        if not self:isOnline() then return end
+        local observer = self:getObserver()
+        local credentials = self:loadCredentialsModule()
+        if not observer or not credentials
+            or type(credentials.withConnection) ~= "function" then
+            return
+        end
+
+        credentials.withConnection(function(settings)
+            observer:flush(
+                settings.username,
+                true,
+                function(payload, callback)
+                    return self:sendAutomaticPayload(settings, payload, callback)
+                end
+            )
+        end)
+    end)
+    if not ok then
+        logger.warn("BookRoom: pending chapter flush failed safely:", tostring(err))
+    end
+end
+
+function BookRoom:scheduleChapterObservation()
+    if self.observation_scheduled then return end
+    self.observation_scheduled = true
+    if type(UIManager.nextTick) == "function" then
+        local ok = pcall(UIManager.nextTick, UIManager, self.observation_task)
+        if ok then return end
+    end
+    self.observation_task()
+end
+
+function BookRoom:onReaderReady()
+    self:scheduleChapterObservation()
+end
+
+function BookRoom:onPageUpdate()
+    self:scheduleChapterObservation()
+end
+
+function BookRoom:onPosUpdate()
+    self:scheduleChapterObservation()
+end
+
+function BookRoom:onNetworkConnected()
+    if self.reconnect_scheduled then return end
+    self.reconnect_scheduled = true
+    if type(UIManager.scheduleIn) == "function" then
+        local ok = pcall(UIManager.scheduleIn, UIManager, 0.5, self.reconnect_task)
+        if ok then return end
+    end
+    self.reconnect_task()
+end
+
+function BookRoom:onCloseWidget()
+    if type(UIManager.unschedule) == "function" then
+        pcall(UIManager.unschedule, UIManager, self.observation_task)
+        pcall(UIManager.unschedule, UIManager, self.reconnect_task)
+    end
+    self.observation_scheduled = false
+    self.reconnect_scheduled = false
+end
+
 function BookRoom:canSendChapter()
     local chapter = self:getChapterSnapshot()
     if chapter.status ~= "ok" then return false end
@@ -316,12 +596,32 @@ function BookRoom:showSendResult(send_result, chapter_title, document)
             _("Reconnect KOReader progress sync."),
         }, "\n"))
     elseif reason == "network_failure" then
-        self:showMessage(table.concat({
+        local lines = {
             _("Could not reach Book Room."),
             _("Your reading was not interrupted."),
+        }
+        if type(send_result) == "table" and send_result.transportCode then
+            table.insert(lines, _("Transport code:") .. " " .. tostring(send_result.transportCode))
+        end
+        self:showMessage(table.concat(lines, "\n"))
+    elseif reason == "encoding_failure" then
+        self:showMessage(table.concat({
+            _("Book Room could not prepare this chapter update."),
+            _("Diagnostic:") .. " encoding_failure",
+        }, "\n"))
+    elseif reason == "plugin_error" then
+        local diagnostic = type(send_result) == "table"
+            and send_result.transportCode or "plugin_error"
+        self:showMessage(table.concat({
+            _("Book Room could not prepare this chapter update."),
+            _("Diagnostic:") .. " " .. tostring(diagnostic),
         }, "\n"))
     else
-        self:showMessage(_("Book Room could not accept this chapter update."))
+        local lines = { _("Book Room could not accept this chapter update.") }
+        if status then
+            table.insert(lines, _("HTTP status:") .. " " .. tostring(status))
+        end
+        self:showMessage(table.concat(lines, "\n"))
     end
 end
 
@@ -346,36 +646,27 @@ function BookRoom:sendChapterNow()
         end
 
         local connection_status, operation = credentials.withConnection(function(settings)
-            local document_module = self:loadDocumentModule()
-            local client = self:loadClientModule()
-            if not document_module or not client then
-                return { started = false, reason = "plugin_error" }
+            local client, client_error = self:loadClientModule()
+            if not client then
+                self:showMessage(table.concat({
+                    _("Book Room could not prepare this chapter update."),
+                    _("Diagnostic:") .. " " .. tostring(client_error or "client_module_error"),
+                }, "\n"))
+                return { started = false, reason = "plugin_error", callbackInvoked = true }
             end
 
-            local document = document_module.capture(self.ui, settings)
-            if type(document) ~= "table" or document.status ~= "ok" then
-                return { started = false, reason = "document_unavailable" }
+            local observation, observation_error = self:captureObservation(settings, report)
+            if not observation then
+                self:showMessage(table.concat({
+                    _("Book Room could not identify this document for sync."),
+                    _("Diagnostic:") .. " " .. tostring(observation_error),
+                }, "\n"))
+                return { started = false, reason = "document_unavailable", callbackInvoked = true }
             end
 
-            local entry = report.currentEntry
-            local payload = {
-                version = 1,
-                document = document.document,
-                device = document.device,
-                deviceId = document.deviceId,
-                progress = document.progress,
-                percentage = document.percentage,
-                chapter = {
-                    title = entry.title,
-                    tocIndex = entry.index,
-                    depth = entry.depth,
-                    parentIndex = entry.parentIndex,
-                    sequenceInLevel = entry.sequenceInLevel,
-                    path = entry.path,
-                    page = entry.page,
-                    location = entry.location,
-                },
-            }
+            local document = observation.document
+            local entry = observation.entry
+            local payload = observation.payload
 
             if NetworkMgr:willRerunWhenOnline(function()
                 self:sendChapterNow()
@@ -388,6 +679,18 @@ function BookRoom:sendChapterNow()
                 settings.username,
                 settings.userkey,
                 function(send_result)
+                    if type(send_result) == "table" and send_result.ok then
+                        local observer = self:getObserver()
+                        if observer then
+                            pcall(
+                                observer.recordSuccessful,
+                                observer,
+                                settings.username,
+                                document.document,
+                                entry
+                            )
+                        end
+                    end
                     self:showSendResult(
                         send_result,
                         entry.title,

@@ -1,6 +1,6 @@
 local source = debug.getinfo(1, "S").source:gsub("^@", "")
 local test_dir = source:match("^(.*)/[^/]+$") or "."
-local Document = dofile(test_dir .. "/../bookroom.koplugin/kosync_document.lua")
+local Document = dofile(test_dir .. "/../bookroom.koplugin/docstate.lua")
 
 local function assertEqual(actual, expected, message)
     if actual ~= expected then
