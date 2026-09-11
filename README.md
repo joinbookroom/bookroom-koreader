@@ -181,3 +181,13 @@ emits safe structured events for advances, blocked jumps, and concurrency
 skips. Automatic entry into the final reading unit retains the normal
 `reading` status and does not create a completion. The existing KOReader plugin
 request and response handling are unchanged.
+
+Meaningful KOReader chapter states also use Book Room's existing notification
+inbox and realtime invalidation channel. Adjacent automatic advances, forward
+jumps, backward divergence, unusable mappings, and sync invalidations each
+share one notification card per document and event type. A durable state key
+makes retries of the same unresolved state a no-op; a genuinely different
+chapter state refreshes and reopens the card. Forward jumps, mapping review,
+and invalidation link to the affected settings card, while backward/rereading
+notifications are informational only. Page turns and same-chapter observations
+do not produce notifications.
