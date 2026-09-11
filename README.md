@@ -137,3 +137,47 @@ structure. The authenticated settings page shows the mapping review and allows
 an entry to be explicitly confirmed against one reading unit. This mapping
 layer does not write `user_work_progress`, completion state, unlock state, or
 message visibility.
+
+## Phase 2 Step 11 trusted progress baseline
+
+Each linked document can now establish a deliberate baseline between its exact
+current chapter mapping and the reader's canonical Book Room position. If
+KOReader is ahead, the settings page requires an explicit confirmation and
+delegates the change to Book Room's existing reading-position service. Equal
+positions, or a Book Room position already ahead, establish the baseline
+without mutating canonical progress.
+
+The management read model exposes whether the baseline is enabled and a pure
+transition decision: baseline required, no change, adjacent forward, forward
+jump requiring confirmation, backward/rereading, Book Room already ahead, or
+unusable mapping. Decisions use the ordered canonical reading units rather
+than chapter-title parsing or ordinal arithmetic. A TOC change, linked-Work
+change, or relevant remapping clears the baseline; disabling it preserves
+KOSync, observations, mappings, and Book Room progress.
+
+Step 11 deliberately does not consume an adjacent-forward decision. Automatic
+plugin observations can update the displayed KOReader chapter and decision,
+but cannot move canonical progress. Entering the final canonical unit uses the
+normal `reading` position semantics and never invokes the explicit Finished
+action.
+
+## Phase 2 Step 12 adjacent automatic progress
+
+After a chapter observation is stored and mapped, the API now re-evaluates the
+latest canonical progress and sync baseline. It automatically delegates to the
+existing Book Room reading-position service only when synchronization is
+enabled, the baseline remains established, the current mapping is exact, and
+the pure transition decision is `ADJACENT_FORWARD`.
+
+The guarded reading-position call compares the expected current canonical unit
+while holding the existing progress-row lock. A retry therefore sees
+`NO_CHANGE`, while a concurrent position change makes the stale automatic move
+a safe no-op. Sequential adjacent observations advance normally. Large jumps,
+backward movement, Book Room positions already ahead, missing baselines, and
+ambiguous or unmapped chapters never perform an automatic write.
+
+The observation endpoint returns a lightweight `canonicalProgress` outcome and
+emits safe structured events for advances, blocked jumps, and concurrency
+skips. Automatic entry into the final reading unit retains the normal
+`reading` status and does not create a completion. The existing KOReader plugin
+request and response handling are unchanged.
