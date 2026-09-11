@@ -37,7 +37,11 @@ local wrong_server = Credentials.evaluate({
     userkey = secret,
 })
 assertEqual(wrong_server.connected, false, "other custom servers are rejected")
-assertEqual(Credentials.formatStatus(wrong_server), "Book Room sync\nNot connected", "wrong server status is generic")
+assertEqual(
+    Credentials.formatStatus(wrong_server),
+    "Book Room sync\nNot connected\nSet the custom server to https://sync.joinbookroom.com (no trailing slash).",
+    "wrong server status gives safe corrective guidance"
+)
 
 local trailing_slash = Credentials.evaluate({
     custom_server = "https://sync.joinbookroom.com/",
@@ -167,5 +171,10 @@ local failed = Credentials.read({
 assertEqual(failed.connected, false, "settings read failures fail closed")
 assertEqual(failed.reason, "settings_unavailable", "settings error is reduced to a generic reason")
 assertNotContains(Credentials.formatStatus(failed), secret, "settings errors cannot leak userkey-like content")
+assertEqual(
+    Credentials.formatStatus(failed),
+    "Book Room sync\nNot connected\nBook Room could not read Progress Sync settings.",
+    "unavailable plugin settings are explained"
+)
 
 print("KOSync credential tests passed")

@@ -59,6 +59,7 @@ local dependencies = {
 
 local payload = {
     version = 1,
+    pluginVersion = "0.6.0",
     document = "f668708f3aa2f8779f57665ded56ed38",
     device = "Kobo Clara",
     deviceId = "device-id",
@@ -121,6 +122,7 @@ assertEqual(timeout_values[1], 2, "interactive block timeout mirrors KOSync")
 assertEqual(timeout_values[2], 5, "interactive total timeout mirrors KOSync")
 assertEqual(timeout_resets, 1, "socket timeout is reset")
 assertEqual(encoded_payload.document, payload.document, "document digest is encoded")
+assertEqual(encoded_payload.pluginVersion, "0.6.0", "plugin version is encoded")
 assertEqual(encoded_payload.chapter.title, "CHAPTER II.", "chapter title punctuation is preserved")
 assertEqual(encoded_payload.chapter.parentIndex, null, "nullable parent is encoded as JSON null")
 assertEqual(encoded_payload.chapter.page, 21, "available page is encoded")

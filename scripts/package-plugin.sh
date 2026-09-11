@@ -7,6 +7,8 @@ integration_dir=$(dirname "$script_dir")
 plugin_dir="$integration_dir/bookroom.koplugin"
 dist_dir="$integration_dir/dist"
 archive="$dist_dir/bookroom.koplugin.zip"
+web_download_dir="$integration_dir/../../apps/web/public/downloads"
+web_archive="$web_download_dir/bookroom.koplugin.zip"
 
 required_files="_meta.lua main.lua chapter.lua toc.lua kosync_credentials.lua docstate.lua client.lua observer.lua README.md"
 
@@ -22,7 +24,9 @@ rm -f "$archive"
 
 (
     cd "$integration_dir"
-zip -q -r "$archive" bookroom.koplugin -x '*/.DS_Store'
+    # A fixed file order and stripped ZIP metadata make repeated packages from
+    # an unchanged source tree byte-for-byte identical.
+    zip -X -q "$archive" $(for file in $required_files; do printf '%s ' "bookroom.koplugin/$file"; done)
 )
 
 # Do not publish a ZIP whose contents differ from the tested source tree.
@@ -34,4 +38,11 @@ for required_file in $required_files; do
     fi
 done
 
-echo "$archive"
+mkdir -p "$web_download_dir"
+cp "$archive" "$web_archive"
+
+if command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$archive"
+else
+    sha256sum "$archive"
+fi

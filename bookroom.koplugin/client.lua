@@ -125,6 +125,7 @@ local function encodablePayload(payload, null_value)
 
     return {
         version = payload.version,
+        pluginVersion = payload.pluginVersion,
         document = payload.document,
         device = payload.device,
         deviceId = payload.deviceId,

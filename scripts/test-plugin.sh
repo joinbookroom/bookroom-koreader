@@ -6,6 +6,11 @@ script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 integration_dir=$(dirname "$script_dir")
 plugin_dir="$integration_dir/bookroom.koplugin"
 
+metadata_version=$(sed -n 's/^[[:space:]]*version = "\([^"]*\)",$/\1/p' "$plugin_dir/_meta.lua")
+runtime_version=$(sed -n 's/^local PLUGIN_VERSION = "\([^"]*\)"$/\1/p' "$plugin_dir/main.lua")
+test -n "$metadata_version"
+test "$metadata_version" = "$runtime_version"
+
 if ! command -v texluac >/dev/null 2>&1 || ! command -v texlua >/dev/null 2>&1; then
     echo "texlua and texluac are required to run the local plugin checks." >&2
     exit 1
@@ -39,6 +44,9 @@ texlua "$integration_dir/tests/menu_test.lua"
 install_test_root=$(mktemp -d "${TMPDIR:-/tmp}/bookroom-install-test.XXXXXX")
 trap 'rm -rf "$install_test_root"' EXIT HUP INT TERM
 mkdir -p "$install_test_root/.adds/koreader/plugins"
+mkdir -p "$install_test_root/.adds/koreader/settings"
+printf '%s\n' 'KOSYNC_SETTINGS_SENTINEL' > "$install_test_root/.adds/koreader/settings/kosync.lua"
+printf '%s\n' 'BOOKROOM_OBSERVATIONS_SENTINEL' > "$install_test_root/.adds/koreader/settings/bookroom_observations.lua"
 "$script_dir/install-plugin.sh" "$install_test_root" >/dev/null
 "$script_dir/install-plugin.sh" "$install_test_root" >/dev/null
 for required_file in _meta.lua main.lua chapter.lua toc.lua kosync_credentials.lua docstate.lua client.lua observer.lua README.md; do
@@ -47,4 +55,6 @@ for required_file in _meta.lua main.lua chapter.lua toc.lua kosync_credentials.l
         "$install_test_root/.adds/koreader/plugins/bookroom.koplugin/$required_file"
 done
 test ! -e "$install_test_root/.adds/koreader/plugins/bookroom.koplugin/BRINST.TMP"
+test "$(sed -n '1p' "$install_test_root/.adds/koreader/settings/kosync.lua")" = 'KOSYNC_SETTINGS_SENTINEL'
+test "$(sed -n '1p' "$install_test_root/.adds/koreader/settings/bookroom_observations.lua")" = 'BOOKROOM_OBSERVATIONS_SENTINEL'
 echo "verified Kobo installer tests passed"

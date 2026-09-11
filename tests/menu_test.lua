@@ -214,12 +214,14 @@ assertEqual(type(menu_item.sub_item_table), "table", "Book Room opens a standard
 local chapter_item = menu_item.sub_item_table[1]
 local sync_item = menu_item.sub_item_table[2]
 local send_item = menu_item.sub_item_table[3]
-local diagnostic_item = menu_item.sub_item_table[4]
+local about_item = menu_item.sub_item_table[4]
+local diagnostic_item = menu_item.sub_item_table[5]
 assertEqual(chapter_item.text_func(), "Current chapter: CHAPTER III.", "submenu shows the live chapter")
 assertEqual(sync_item.text, "Book Room sync status", "sync status remains available")
 assertEqual(send_item.text, "Send chapter now", "manual action label")
 assertEqual(type(send_item.enabled_func), "function", "manual action has an availability check")
 assertEqual(send_item.enabled_func(), true, "valid connection and chapter enable manual send")
+assertEqual(about_item.text, "About Book Room", "about action is available")
 assertEqual(diagnostic_item.text, "TOC diagnostics (temporary)", "TOC diagnostics remain available")
 
 shown_message = nil
@@ -232,12 +234,17 @@ assertEqual(shown_message.text, "Book Room sync\nConnected\nServer: sync.joinboo
 assertEqual(shown_message.text:find(kosync_settings.userkey, 1, true), nil, "sync status does not display userkey")
 
 shown_message = nil
+about_item.callback()
+assertEqual(shown_message.text:find("Version 0.6.0", 1, true) ~= nil, true, "about UI shows the plugin version")
+
+shown_message = nil
 send_item.callback()
 assertEqual(http_calls, 1, "one menu tap creates one HTTP request")
 assertEqual(network_checks, 1, "manual action checks KOReader network availability")
 assertEqual(sent_username, "reader", "manual action reuses KOSync username")
 assertEqual(sent_userkey, kosync_settings.userkey, "manual action passes through wire userkey")
 assertEqual(sent_payload.version, 1, "Step 6 payload version is used")
+assertEqual(sent_payload.pluginVersion, "0.6.0", "plugin version is sent with observations")
 assertEqual(sent_payload.document, "f668708f3aa2f8779f57665ded56ed38", "Phase 1 document digest is sent")
 assertEqual(sent_payload.chapter.title, "CHAPTER III.", "normalized title punctuation is preserved")
 assertEqual(sent_payload.chapter.tocIndex, 1, "normalized zero-based TOC index is sent")

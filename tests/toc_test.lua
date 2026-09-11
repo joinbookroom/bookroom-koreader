@@ -89,6 +89,35 @@ assertContains(diagnostics, "- xpointer (string)", "diagnostic shows raw field t
 assertContains(diagnostics, "[4] depth=1 parent=3 sequence=1 page=54", "diagnostic shows normalized current entry")
 assertContains(diagnostics, "path: Volume II > Chapter I", "diagnostic shows normalized path")
 
+-- Project Gutenberg #98's inspected EPUB declares a depth-1 NCX even though
+-- Book headings separate repeated chapter numbers. This representative slice
+-- protects current-chapter detection and ensures normalization does not invent
+-- hierarchy that the EPUB/KOReader TOC does not expose.
+local two_cities_toc = {
+    { title = "Book the First—Recalled to Life", depth = 1, page = 1, seq_in_level = 1 },
+    { title = "CHAPTER I. The Period", depth = 1, page = 2, seq_in_level = 2 },
+    { title = "CHAPTER VI. The Shoemaker", depth = 1, page = 33, seq_in_level = 7 },
+    { title = "Book the Second—the Golden Thread", depth = 1, page = 45, seq_in_level = 8 },
+    { title = "CHAPTER I. Five Years Later", depth = 1, page = 46, seq_in_level = 9 },
+}
+local two_cities = Toc.inspect({
+    getCurrentPage = function() return 46 end,
+    toc = {
+        toc = two_cities_toc,
+        fillToc = function() end,
+        getTocIndexByPage = function(_, page)
+            assertEqual(page, 46, "second-book current page is inspected")
+            return 5
+        end,
+    },
+})
+assertEqual(two_cities.status, "ok", "second-book TOC inspection succeeds")
+assertEqual(two_cities.currentEntry.title, "CHAPTER I. Five Years Later", "second-book current chapter is detected")
+assertEqual(two_cities.currentEntry.index, 4, "second-book current source index is zero based")
+assertEqual(two_cities.currentEntry.depth, 0, "flat second-book TOC stays flat")
+assertEqual(two_cities.currentEntry.parentIndex, nil, "flat second-book TOC does not invent a Book parent")
+assertEqual(#two_cities.currentEntry.path, 1, "flat second-book path contains only its supplied title")
+
 local failed = Toc.inspect({
     getCurrentPage = function()
         return 1

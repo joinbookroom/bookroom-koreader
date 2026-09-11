@@ -131,9 +131,24 @@ function Credentials.formatStatus(result)
         }, "\n")
     end
 
+    local guidance = "Open Progress Sync and finish logging in."
+    if type(result) == "table" then
+        if result.status == "unavailable" then
+            guidance = "Book Room could not read Progress Sync settings."
+        elseif result.serverConfigured and not result.serverMatchesBookRoom then
+            guidance = "Set the custom server to " .. BOOKROOM_SERVER .. " (no trailing slash)."
+        elseif result.serverMatchesBookRoom
+            and (not result.usernameConfigured or not result.userkeyConfigured) then
+            guidance = "Open Progress Sync and log in with your Book Room credentials."
+        elseif not result.serverConfigured then
+            guidance = "Choose Custom sync server and enter " .. BOOKROOM_SERVER .. "."
+        end
+    end
+
     return table.concat({
         "Book Room sync",
         "Not connected",
+        guidance,
     }, "\n")
 end
 

@@ -14,10 +14,17 @@ Run:
 
 The command creates `integrations/koreader/dist/bookroom.koplugin.zip`. The ZIP
 has `bookroom.koplugin/` as its root directory, ready to extract into KOReader's
-`plugins` directory.
+`plugins` directory. It also copies the same verified artifact to
+`apps/web/public/downloads/bookroom.koplugin.zip` for the settings-page download.
 
-The packaging command verifies every archived file byte-for-byte against the
-tested source tree before publishing the ZIP.
+The packaging command uses a fixed file order, strips host-specific ZIP
+metadata, verifies every archived file byte-for-byte against the tested source
+tree, and prints its SHA-256 checksum. Repeating it against an unchanged source
+tree produces the same artifact.
+
+The beta plugin version is `0.6.0`. It is present in KOReader plugin metadata,
+the in-reader About view, every chapter-observation payload, and the Book Room
+settings read model after a 0.6.0 observation arrives.
 
 ## Install on a mounted Kobo
 
@@ -50,7 +57,21 @@ diagnostic view, and reader lifecycle/menu callbacks against mocked KOReader
 objects.
 
 The checks also run the verified installer twice against a temporary mock Kobo
-volume, confirming both first installation and safe replacement.
+volume, confirming both first installation and safe replacement. Sentinel
+KOSync and Book Room observation settings are verified unchanged after both
+installs.
+
+## Install or update manually
+
+1. Download `bookroom.koplugin.zip` from Book Room's KOReader settings page.
+2. Connect the Kobo over USB and open `.adds/koreader/plugins` on the device.
+3. Extract or copy the archive so the result is
+   `.adds/koreader/plugins/bookroom.koplugin`.
+4. For an update, replace the files in that plugin folder only. Leave
+   `.adds/koreader/settings/kosync.lua` and
+   `.adds/koreader/settings/bookroom_observations.lua` in place.
+5. Safely eject the Kobo and restart KOReader. Open
+   `Book Room` > `About Book Room` to confirm version 0.6.0.
 
 ## Phase 2 Step 6 server endpoint
 
