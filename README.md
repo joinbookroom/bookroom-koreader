@@ -1,31 +1,37 @@
 # Book Room KOReader plugin
 
-This is the Phase 2 Step 8 plugin. It reads KOReader's current
+Version 0.6.0 reads KOReader's current
 table-of-contents title, normalizes the active document TOC, checks whether the
 existing KOSync configuration is ready for Book Room, automatically observes
 chapter changes, and retains the manual `Send chapter now` action.
 
-This build is deliberately limited to external chapter observation:
+The device plugin is deliberately limited to external chapter observation:
 
 - no KOSync credential writes, display, or logging
 - no modification of KOSync configuration
 - no request for page turns within the same normalized chapter
 - at most one latest pending automatic observation per document
-- no Book Room progress updates
-- no mapping to Book Room work units
+- no direct Book Room progress updates (the Book Room API applies the existing
+  adjacent-only rule after the reader opts in on the website)
+- no device-side mapping to Book Room work units
 - no book text, annotations, highlights, or notes access
 
 ## Device installation
 
 1. Connect the Kobo to a computer.
-2. From the Book Room repository, run
-   `./integrations/koreader/scripts/install-plugin.sh`.
-3. Wait for the installer to report that every file was verified.
+2. Build `bookroom.koplugin.zip` with
+   `./integrations/koreader/scripts/package-plugin.sh`, or download that file
+   from the Book Room KOReader settings page.
+3. Recommended for a repository checkout: run
+   `./integrations/koreader/scripts/install-plugin.sh` and wait for every file
+   to be verified. For a manual install, extract the ZIP so the device contains
+   `.adds/koreader/plugins/bookroom.koplugin/_meta.lua` (and the other plugin
+   files beside it).
 4. Safely eject the Kobo and restart KOReader.
 5. Open an EPUB with a table of contents.
 6. Open KOReader's reader menu and select `Tools` > `More tools` > `Book Room`.
 
-The installer defaults to `/Volumes/KOBOeReader`; pass a different mounted
+The verified installer defaults to `/Volumes/KOBOeReader`; pass a different mounted
 volume path as its first argument if necessary. Do not extract the ZIP directly
 over the live plugin directory. Kobo's FAT filesystem can orphan an overwritten
 file if a copy or disconnect is interrupted. The verified installer preserves
@@ -37,7 +43,18 @@ filename format and does not share the colliding `kosync_` prefix that was
 repeatedly recovered by filesystem repair as `FSCK0000.000` on the test Kobo.
 
 The Book Room submenu shows the current chapter, connection status, manual send
-action, and temporary TOC diagnostics.
+action, versioned About view, and temporary TOC diagnostics.
+
+## Updating without losing settings
+
+Build or download the new `bookroom.koplugin.zip`, replace the existing
+`.adds/koreader/plugins/bookroom.koplugin` files, safely eject, and restart
+KOReader. Do not delete `.adds/koreader/settings/kosync.lua` or
+`.adds/koreader/settings/bookroom_observations.lua`.
+
+The plugin installer writes only inside the plugin folder. Automated upgrade
+checks install twice over an older copy and verify that both KOReader's KOSync
+settings and Book Room's pending-observation file remain byte-for-byte intact.
 
 For the temporary Step 4 device diagnostic, select `Tools` > `More tools` >
 `Book Room TOC diagnostics (temporary)`. A scrollable view shows:
@@ -117,9 +134,11 @@ normalized external TOC so Book Room can maintain a separate canonical mapping
 layer. Neither the plugin nor that mapping layer updates `user_work_progress`
 or changes spoiler/unlock state.
 
-The minimum supported KOReader version will be documented after this milestone
-is tested against the version installed on the target Kobo Clara. On the Kobo,
-the version is available from `Help` > `About KOReader` (menu placement may vary).
+KOReader 2026.07.1 is the currently verified device version. The plugin checks
+the required APIs at runtime and fails open on unsupported versions. On the
+Kobo, the KOReader version is available from `Help` > `About KOReader` (menu
+placement may vary); the Book Room plugin version appears under
+`Book Room` > `About Book Room`.
 
 ## APIs used in this milestone
 

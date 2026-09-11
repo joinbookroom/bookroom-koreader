@@ -7,6 +7,8 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
 
+local PLUGIN_VERSION = "0.6.0"
+
 local BookRoom = WidgetContainer:extend{
     name = "bookroom",
     is_doc_only = true,
@@ -384,6 +386,7 @@ function BookRoom:captureObservation(settings, report)
         entry = entry,
         payload = {
             version = 1,
+            pluginVersion = PLUGIN_VERSION,
             document = document.document,
             device = document.device,
             deviceId = document.deviceId,
@@ -753,6 +756,16 @@ function BookRoom:showSyncStatus()
     end
 end
 
+function BookRoom:showAbout()
+    self:showMessage(table.concat({
+        _("Book Room for KOReader"),
+        _("Version") .. " " .. PLUGIN_VERSION,
+        "",
+        _("Observes chapter changes and sends only the latest chapter while connected."),
+        _("Book Room progress changes only after you enable automatic progress on the website."),
+    }, "\n"))
+end
+
 function BookRoom:addToMainMenu(menu_items)
     menu_items.bookroom = {
         text = _("Book Room"),
@@ -779,6 +792,12 @@ function BookRoom:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self:sendChapterNow()
+                end,
+            },
+            {
+                text = _("About Book Room"),
+                callback = function()
+                    self:showAbout()
                 end,
             },
             {
