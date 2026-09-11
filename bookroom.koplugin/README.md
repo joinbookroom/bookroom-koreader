@@ -112,8 +112,10 @@ pending payload per KOSync user and document. `NetworkConnected` silently sends
 the latest pending value. Failed sends remain pending, do not retry on ordinary
 page events, and never show a user-facing error dialog.
 
-The observation file contains no userkey. This milestone does not map TOC
-entries, update `user_work_progress`, or change spoiler/unlock state.
+The observation file contains no userkey. Payloads include the complete
+normalized external TOC so Book Room can maintain a separate canonical mapping
+layer. Neither the plugin nor that mapping layer updates `user_work_progress`
+or changes spoiler/unlock state.
 
 The minimum supported KOReader version will be documented after this milestone
 is tested against the version installed on the target Kobo Clara. On the Kobo,

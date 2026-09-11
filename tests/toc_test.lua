@@ -69,6 +69,7 @@ assertEqual(fill_calls, 1, "ReaderToc lazy fill is used")
 assertEqual(index_calls, 1, "ReaderToc current-index API is used")
 assertEqual(report.currentEntry.index, 4, "current entry is normalized")
 assertEqual(report.currentEntry.parentIndex, 3, "current entry hierarchy is present")
+assertEqual(#report.entries, 6, "the complete normalized TOC is available for mapping payloads")
 assertEqual(#report.sample, 5, "diagnostic sample is bounded")
 
 local observed = {}

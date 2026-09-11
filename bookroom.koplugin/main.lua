@@ -399,6 +399,9 @@ function BookRoom:captureObservation(settings, report)
                 page = entry.page,
                 location = entry.location,
             },
+            toc = {
+                entries = report.entries,
+            },
         },
     }
 end

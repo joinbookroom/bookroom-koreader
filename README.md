@@ -103,9 +103,9 @@ payload per document; a later chapter replaces the older pending value.
 `NetworkConnected` silently flushes pending observations. Automatic failures
 remain pending and never display a reader dialog or retry on subsequent pages.
 
-This state contains no userkey. Automatic observation only updates the external
-KOReader chapter record through `/bookroom/v1/chapter-progress`; it performs no
-chapter mapping, canonical Book Room progress update, or spoiler/unlock change.
+This state contains no userkey. Automatic observation updates the external
+KOReader chapter record through `/bookroom/v1/chapter-progress`; it never
+updates canonical Book Room progress or spoiler/unlock state.
 
 ## Phase 2 Step 9 read-only presentation
 
@@ -120,3 +120,20 @@ values for each synced document:
 
 An unavailable observation is shown as `Not available`. This display does not
 map TOC entries, write `user_work_progress`, or change spoiler/unlock state.
+
+## Phase 2 Step 10 canonical mapping
+
+Chapter observations now include KOReader's complete normalized external TOC.
+The API fingerprints that structure and stores its raw titles, indexes, and
+paths separately from Book Room reading units. For a confirmed document-to-Work
+link, deterministic exact-title and explicit `Chapter N` matches are persisted
+as `EXACT`; repeated or competing candidates are `AMBIGUOUS`; and entries with
+no credible canonical unit remain `UNMAPPED`.
+
+Valid Roman chapter numerals are parsed strictly, while plain numbers and
+labels such as `Part 2`, `Book 3`, or `Volume II` are not treated as chapters.
+Changing the TOC fingerprint invalidates mappings tied to the previous external
+structure. The authenticated settings page shows the mapping review and allows
+an entry to be explicitly confirmed against one reading unit. This mapping
+layer does not write `user_work_progress`, completion state, unlock state, or
+message visibility.

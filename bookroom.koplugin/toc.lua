@@ -272,6 +272,7 @@ function Toc.inspect(ui)
         currentRawFields = current_index and describeEntry(raw_toc[current_index]) or {},
         observedRawFields = describeAllFields(raw_toc),
         entryCount = #normalized,
+        entries = normalized,
         normalization = normalization,
         sample = sample,
         sampleFirstIndex = sample_first - 1,

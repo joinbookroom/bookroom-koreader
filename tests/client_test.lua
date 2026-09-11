@@ -74,6 +74,26 @@ local payload = {
         page = 21,
         location = "/body/chapter-2",
     },
+    toc = {
+        entries = {
+            {
+                title = "Contents",
+                index = 0,
+                depth = 0,
+                path = { "Contents" },
+                page = 1,
+            },
+            {
+                title = "CHAPTER II.",
+                index = 4,
+                depth = 0,
+                sequenceInLevel = 5,
+                path = { "CHAPTER II." },
+                page = 21,
+                location = "/body/chapter-2",
+            },
+        },
+    },
 }
 
 local send_result
@@ -104,6 +124,10 @@ assertEqual(encoded_payload.document, payload.document, "document digest is enco
 assertEqual(encoded_payload.chapter.title, "CHAPTER II.", "chapter title punctuation is preserved")
 assertEqual(encoded_payload.chapter.parentIndex, null, "nullable parent is encoded as JSON null")
 assertEqual(encoded_payload.chapter.page, 21, "available page is encoded")
+assertEqual(#encoded_payload.toc.entries, 2, "the normalized external TOC is encoded")
+assertEqual(encoded_payload.toc.entries[1].tocIndex, 0, "TOC source indexes remain zero-based")
+assertEqual(encoded_payload.toc.entries[1].parentIndex, null, "TOC nullable parents are encoded")
+assertEqual(encoded_payload.toc.entries[2].title, "CHAPTER II.", "TOC titles remain raw")
 assertEqual(send_result.ok, true, "HTTP 200 succeeds")
 assertEqual(send_result.status, 200, "success status is retained")
 assertEqual(send_result.userkey, nil, "result does not expose userkey")
