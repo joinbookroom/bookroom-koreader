@@ -94,12 +94,35 @@ local function loadDependencies(dependencies)
     }
 end
 
+local function encodableChapter(chapter, null_value)
+    return {
+        title = chapter.title,
+        tocIndex = chapter.tocIndex or chapter.index,
+        depth = chapter.depth,
+        parentIndex = chapter.parentIndex == nil and null_value or chapter.parentIndex,
+        sequenceInLevel = chapter.sequenceInLevel == nil and null_value or chapter.sequenceInLevel,
+        path = chapter.path,
+        page = chapter.page == nil and null_value or chapter.page,
+        location = chapter.location == nil and null_value or chapter.location,
+    }
+end
+
 local function encodablePayload(payload, null_value)
     if type(payload) ~= "table" or type(payload.chapter) ~= "table" then
         return nil
     end
 
-    local chapter = payload.chapter
+    local toc
+    if type(payload.toc) == "table" and type(payload.toc.entries) == "table" then
+        toc = { entries = {} }
+        if type(payload.toc.fingerprint) == "string" then
+            toc.fingerprint = payload.toc.fingerprint
+        end
+        for i, entry in ipairs(payload.toc.entries) do
+            toc.entries[i] = encodableChapter(entry, null_value)
+        end
+    end
+
     return {
         version = payload.version,
         document = payload.document,
@@ -107,17 +130,8 @@ local function encodablePayload(payload, null_value)
         deviceId = payload.deviceId,
         progress = payload.progress,
         percentage = payload.percentage,
-        chapter = {
-            title = chapter.title,
-            tocIndex = chapter.tocIndex,
-            depth = chapter.depth,
-            parentIndex = chapter.parentIndex == nil and null_value or chapter.parentIndex,
-            sequenceInLevel = chapter.sequenceInLevel == nil and null_value or chapter.sequenceInLevel,
-            path = chapter.path,
-            page = chapter.page == nil and null_value or chapter.page,
-            location = chapter.location == nil and null_value or chapter.location,
-        },
-        toc = payload.toc,
+        chapter = encodableChapter(payload.chapter, null_value),
+        toc = toc,
     }
 end
 
