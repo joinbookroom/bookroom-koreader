@@ -1,6 +1,6 @@
 # Book Room for KOReader
 
-Version 0.6.0 observes chapter changes and sends the latest normalized chapter
+Version 0.6.1 observes chapter changes and sends the latest normalized chapter
 and table of contents to Book Room using KOReader's existing Progress Sync
 connection.
 

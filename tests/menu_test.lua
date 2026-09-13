@@ -1,6 +1,10 @@
 local source = debug.getinfo(1, "S").source:gsub("^@", "")
 local test_dir = source:match("^(.*)/[^/]+$") or "."
 local plugin_dir = test_dir .. "/../bookroom.koplugin"
+local metadata_file = assert(io.open(plugin_dir .. "/_meta.lua", "r"))
+local metadata_source = metadata_file:read("*a")
+metadata_file:close()
+local expected_plugin_version = assert(metadata_source:match('version%s*=%s*"([^"]+)"'))
 
 local shown_message
 local warnings = {}
@@ -235,7 +239,7 @@ assertEqual(shown_message.text:find(kosync_settings.userkey, 1, true), nil, "syn
 
 shown_message = nil
 about_item.callback()
-assertEqual(shown_message.text:find("Version 0.6.0", 1, true) ~= nil, true, "about UI shows the plugin version")
+assertEqual(shown_message.text:find("Version " .. expected_plugin_version, 1, true) ~= nil, true, "about UI shows the plugin version")
 
 shown_message = nil
 send_item.callback()
@@ -244,7 +248,7 @@ assertEqual(network_checks, 1, "manual action checks KOReader network availabili
 assertEqual(sent_username, "reader", "manual action reuses KOSync username")
 assertEqual(sent_userkey, kosync_settings.userkey, "manual action passes through wire userkey")
 assertEqual(sent_payload.version, 1, "Step 6 payload version is used")
-assertEqual(sent_payload.pluginVersion, "0.6.0", "plugin version is sent with observations")
+assertEqual(sent_payload.pluginVersion, expected_plugin_version, "plugin version is sent with observations")
 assertEqual(sent_payload.document, "f668708f3aa2f8779f57665ded56ed38", "Phase 1 document digest is sent")
 assertEqual(sent_payload.chapter.title, "CHAPTER III.", "normalized title punctuation is preserved")
 assertEqual(sent_payload.chapter.tocIndex, 1, "normalized zero-based TOC index is sent")
