@@ -68,7 +68,8 @@ document and are sent when KOReader reconnects.
 The plugin sends data only to `https://sync.joinbookroom.com` over HTTPS. A
 chapter observation contains:
 
-- the dedicated KOSync username and sync password in authentication headers;
+- the dedicated KOSync username and KOReader's derived authentication key
+  (`userkey`) in HTTPS authentication headers;
 - the document digest, reader model/name, device ID, position, and percentage;
 - the current table-of-contents entry and the normalized table-of-contents
   structure, including chapter titles and locations; and

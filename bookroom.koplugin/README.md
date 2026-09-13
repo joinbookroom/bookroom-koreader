@@ -25,11 +25,11 @@ and table-of-contents diagnostics.
 
 ## Data and local state
 
-The plugin sends the KOSync username and sync password as HTTPS authentication
-headers. Its payload contains the document digest, device name and ID, reading
-position and percentage, plugin version, current chapter, and normalized table
-of contents. It does not access or send book text, annotations, highlights, or
-notes.
+The plugin sends the dedicated KOSync username and KOReader's derived
+authentication key (`userkey`) in HTTPS authentication headers. Its payload
+contains the document digest, device name and ID, reading position and
+percentage, plugin version, current chapter, and normalized table of contents.
+It does not access or send book text, annotations, highlights, or notes.
 
 The sync password is never displayed, logged, or stored by this plugin. The
 latest local observation state is kept separately in
