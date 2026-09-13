@@ -9,7 +9,7 @@ The submodule points to:
 
 - repository: `https://github.com/anushkafka/bookroom-koreader.git`
 - branch: `koreader-contrib`
-- commit: `17e1689d0a09b96b0ba7f462a83af9d2663c8c20`
+- commit: `104c4d337a611947b9ae5f943cb689d599e1ced9`
 
 The `koreader-contrib` branch is generated from `bookroom.koplugin/` on this
 repository's `main` branch, so `_meta.lua` and `main.lua` appear at the
