@@ -6,7 +6,7 @@ existing KOSync connection. It does not patch KOReader or access book text,
 annotations, highlights, or notes.
 
 Upstream plugin repository:
-https://github.com/anushkafka/bookroom-koreader
+https://github.com/joinbookroom/bookroom-koreader
 
 Compatibility:
 

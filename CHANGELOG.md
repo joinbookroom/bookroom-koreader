@@ -19,4 +19,4 @@ follow [Semantic Versioning](https://semver.org/).
 - Sync passwords are excluded from plugin storage, UI messages, and logs.
 - The plugin does not access book text, annotations, highlights, or notes.
 
-[0.6.0]: https://github.com/anushkafka/bookroom-koreader/releases/tag/v0.6.0
+[0.6.0]: https://github.com/joinbookroom/bookroom-koreader/releases/tag/v0.6.0

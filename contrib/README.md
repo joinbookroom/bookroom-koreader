@@ -7,7 +7,7 @@ current requirements.
 
 The submodule points to:
 
-- repository: `https://github.com/anushkafka/bookroom-koreader.git`
+- repository: `https://github.com/joinbookroom/bookroom-koreader.git`
 - branch: `koreader-contrib`
 - commit: `104c4d337a611947b9ae5f943cb689d599e1ced9`
 
@@ -17,7 +17,7 @@ submodule checkout root.
 
 ## Before submitting
 
-1. Create the public `anushkafka/bookroom-koreader` GitHub repository.
+1. Create the public `joinbookroom/bookroom-koreader` GitHub repository.
 2. Push both `main` and `koreader-contrib`.
 3. Push the `v0.6.0` tag and confirm that the ZIP and checksum appear in the
    GitHub release.

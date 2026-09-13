@@ -13,7 +13,7 @@ without interrupting reading.
 ## Install
 
 1. Download `bookroom.koplugin.zip` and `bookroom.koplugin.zip.sha256` from the
-   [latest release](https://github.com/anushkafka/bookroom-koreader/releases/latest).
+   [latest release](https://github.com/joinbookroom/bookroom-koreader/releases/latest).
 2. Optionally verify the archive:
 
    ```sh

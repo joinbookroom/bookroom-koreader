@@ -39,4 +39,4 @@ data, but not the sync password. Progress Sync settings remain in
 file.
 
 Source, full installation instructions, checksums, and license:
-https://github.com/anushkafka/bookroom-koreader
+https://github.com/joinbookroom/bookroom-koreader
