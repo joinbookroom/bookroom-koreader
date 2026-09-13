@@ -7,7 +7,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
 
-local PLUGIN_VERSION = "0.6.0"
+local PLUGIN_VERSION = "0.6.1"
 
 local BookRoom = WidgetContainer:extend{
     name = "bookroom",
