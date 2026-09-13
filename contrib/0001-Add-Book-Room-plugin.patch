@@ -1,0 +1,33 @@
+From b414798989786e3ef9e39944b4cfb8a4177a155a Mon Sep 17 00:00:00 2001
+From: anushkafka <anushka.rf@gmail.com>
+Date: Sun, 13 Sep 2026 18:29:40 +1000
+Subject: [PATCH] Add Book Room plugin
+
+---
+ .gitmodules       | 4 ++++
+ bookroom.koplugin | 1 +
+ 2 files changed, 5 insertions(+)
+ create mode 160000 bookroom.koplugin
+
+diff --git a/.gitmodules b/.gitmodules
+index 8ba5377..17c7327 100644
+--- a/.gitmodules
++++ b/.gitmodules
+@@ -338,3 +338,7 @@
+ [submodule "suwayomi.koplugin"]
+ 	path = suwayomi.koplugin
+ 	url = https://github.com/LK4D4/suwayomi.koplugin.git
++[submodule "bookroom.koplugin"]
++	path = bookroom.koplugin
++	url = https://github.com/anushkafka/bookroom-koreader.git
++	branch = koreader-contrib
+diff --git a/bookroom.koplugin b/bookroom.koplugin
+new file mode 160000
+index 0000000..17e1689
+--- /dev/null
++++ b/bookroom.koplugin
+@@ -0,0 +1 @@
++Subproject commit 17e1689d0a09b96b0ba7f462a83af9d2663c8c20
+-- 
+2.50.1 (Apple Git-155)
+
