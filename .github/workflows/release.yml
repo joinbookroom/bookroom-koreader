@@ -1,0 +1,37 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check tag and plugin versions
+        run: |
+          tag_version="${GITHUB_REF_NAME#v}"
+          metadata_version=$(sed -n 's/^[[:space:]]*version = "\([^"]*\)",$/\1/p' bookroom.koplugin/_meta.lua)
+          runtime_version=$(sed -n 's/^local PLUGIN_VERSION = "\([^"]*\)"$/\1/p' bookroom.koplugin/main.lua)
+          test "$tag_version" = "$metadata_version"
+          test "$tag_version" = "$runtime_version"
+      - name: Install release dependencies
+        run: sudo apt-get update && sudo apt-get install --yes texlive-binaries zip unzip
+      - name: Test and package
+        run: |
+          ./scripts/test-plugin.sh
+          ./scripts/package-plugin.sh
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "$GITHUB_REF_NAME"
+          dist/bookroom.koplugin.zip
+          dist/bookroom.koplugin.zip.sha256
+          --verify-tag
+          --generate-notes

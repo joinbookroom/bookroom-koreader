@@ -7,8 +7,7 @@ integration_dir=$(dirname "$script_dir")
 plugin_dir="$integration_dir/bookroom.koplugin"
 dist_dir="$integration_dir/dist"
 archive="$dist_dir/bookroom.koplugin.zip"
-web_download_dir="$integration_dir/../../apps/web/public/downloads"
-web_archive="$web_download_dir/bookroom.koplugin.zip"
+checksum="$archive.sha256"
 
 required_files="_meta.lua main.lua chapter.lua toc.lua kosync_credentials.lua docstate.lua client.lua observer.lua README.md"
 
@@ -20,10 +19,21 @@ for required_file in $required_files; do
 done
 
 mkdir -p "$dist_dir"
-rm -f "$archive"
+rm -f "$archive" "$checksum"
+
+staging_dir=$(mktemp -d "${TMPDIR:-/tmp}/bookroom-package.XXXXXX")
+trap 'rm -rf "$staging_dir"' EXIT HUP INT TERM
+mkdir -p "$staging_dir/bookroom.koplugin"
+
+for required_file in $required_files; do
+    cp "$plugin_dir/$required_file" "$staging_dir/bookroom.koplugin/$required_file"
+    # ZIP stores DOS timestamps. Fixing them makes artifacts reproducible
+    # across fresh checkouts and release runners.
+    touch -t 200001010000 "$staging_dir/bookroom.koplugin/$required_file"
+done
 
 (
-    cd "$integration_dir"
+    cd "$staging_dir"
     # A fixed file order and stripped ZIP metadata make repeated packages from
     # an unchanged source tree byte-for-byte identical.
     zip -X -q "$archive" $(for file in $required_files; do printf '%s ' "bookroom.koplugin/$file"; done)
@@ -38,11 +48,11 @@ for required_file in $required_files; do
     fi
 done
 
-mkdir -p "$web_download_dir"
-cp "$archive" "$web_archive"
-
 if command -v shasum >/dev/null 2>&1; then
-    shasum -a 256 "$archive"
+    digest=$(shasum -a 256 "$archive" | awk '{print $1}')
 else
-    sha256sum "$archive"
+    digest=$(sha256sum "$archive" | awk '{print $1}')
 fi
+
+printf '%s  %s\n' "$digest" "$(basename "$archive")" > "$checksum"
+printf '%s  %s\n' "$digest" "$archive"
