@@ -9,7 +9,7 @@ The submodule points to:
 
 - repository: `https://github.com/joinbookroom/bookroom-koreader.git`
 - branch: `koreader-contrib`
-- commit: `104c4d337a611947b9ae5f943cb689d599e1ced9`
+- commit: `79e4f3f2bb6b5d2e628088819d152441e7446e5f`
 
 The `koreader-contrib` branch is generated from `bookroom.koplugin/` on this
 repository's `main` branch, so `_meta.lua` and `main.lua` appear at the
@@ -17,7 +17,7 @@ submodule checkout root.
 
 ## Before submitting
 
-1. Create the public `joinbookroom/bookroom-koreader` GitHub repository.
+1. Confirm the public `joinbookroom/bookroom-koreader` repository is available.
 2. Push both `main` and `koreader-contrib`.
 3. Push the `v0.6.0` tag and confirm that the ZIP and checksum appear in the
    GitHub release.
