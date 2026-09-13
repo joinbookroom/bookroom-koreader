@@ -9,7 +9,7 @@ dist_dir="$integration_dir/dist"
 archive="$dist_dir/bookroom.koplugin.zip"
 checksum="$archive.sha256"
 
-required_files="_meta.lua main.lua chapter.lua toc.lua kosync_credentials.lua docstate.lua client.lua observer.lua README.md"
+required_files="_meta.lua main.lua chapter.lua toc.lua kosync_credentials.lua docstate.lua client.lua observer.lua README.md LICENSE"
 
 for required_file in $required_files; do
     if [ ! -f "$plugin_dir/$required_file" ]; then

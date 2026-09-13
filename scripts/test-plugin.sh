@@ -49,11 +49,12 @@ printf '%s\n' 'KOSYNC_SETTINGS_SENTINEL' > "$install_test_root/.adds/koreader/se
 printf '%s\n' 'BOOKROOM_OBSERVATIONS_SENTINEL' > "$install_test_root/.adds/koreader/settings/bookroom_observations.lua"
 "$script_dir/install-plugin.sh" "$install_test_root" >/dev/null
 "$script_dir/install-plugin.sh" "$install_test_root" >/dev/null
-for required_file in _meta.lua main.lua chapter.lua toc.lua kosync_credentials.lua docstate.lua client.lua observer.lua README.md; do
+for required_file in _meta.lua main.lua chapter.lua toc.lua kosync_credentials.lua docstate.lua client.lua observer.lua README.md LICENSE; do
     cmp -s \
         "$plugin_dir/$required_file" \
         "$install_test_root/.adds/koreader/plugins/bookroom.koplugin/$required_file"
 done
+cmp -s "$integration_dir/LICENSE" "$plugin_dir/LICENSE"
 test ! -e "$install_test_root/.adds/koreader/plugins/bookroom.koplugin/BRINST.TMP"
 test "$(sed -n '1p' "$install_test_root/.adds/koreader/settings/kosync.lua")" = 'KOSYNC_SETTINGS_SENTINEL'
 test "$(sed -n '1p' "$install_test_root/.adds/koreader/settings/bookroom_observations.lua")" = 'BOOKROOM_OBSERVATIONS_SENTINEL'

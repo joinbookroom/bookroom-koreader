@@ -12,7 +12,7 @@ temporary_file="$target_dir/BRINST.TMP"
 # Supporting modules are activated first; the runtime entrypoint and metadata
 # are last. Even an interrupted multi-file install therefore keeps the previous
 # main.lua until all of its new dependencies have been verified.
-required_files="chapter.lua toc.lua kosync_credentials.lua docstate.lua client.lua observer.lua README.md main.lua _meta.lua"
+required_files="chapter.lua toc.lua kosync_credentials.lua docstate.lua client.lua observer.lua README.md LICENSE main.lua _meta.lua"
 
 if [ ! -d "$plugins_dir" ]; then
     echo "KOReader plugins directory not found: $plugins_dir" >&2
